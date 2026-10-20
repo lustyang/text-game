@@ -1,0 +1,873 @@
+/* ============================================================
+   TEXT QUEST · 复古街机 / CRT 风格登录页
+   配色集中在 :root，想换主题只改这几个变量就够了
+   ============================================================ */
+
+:root {
+    /* 底色 */
+    --bg-deep: #04050d;
+    --bg-mid: #0a0c1e;
+    --panel: #0c1026;
+    --panel-2: #111635;
+
+    /* 霓虹主色 */
+    --cyan: #4df3ff;
+    --cyan-dim: #1b7f8c;
+    --pink: #ff3d81;
+    --yellow: #ffd93d;
+    --green: #5cf08a;
+    --red: #ff5b5b;
+
+    /* 文本 */
+    --text: #d7e3ff;
+    --text-dim: #7f8bb8;
+
+    /* 边线 */
+    --edge: #2a3a7a;
+    --edge-hot: #4df3ff;
+
+    --font-pixel: 'Press Start 2P', 'Courier New', Courier, monospace;
+    --font-body: 'VT323', 'Consolas', 'Microsoft YaHei', 'PingFang SC', monospace;
+
+    --radius: 2px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 28px 16px;
+
+    font-family: var(--font-body);
+    font-size: 19px;
+    color: var(--text);
+
+    background:
+            radial-gradient(circle at 50% 0%, #16205a 0%, transparent 55%),
+            radial-gradient(circle at 50% 110%, #2a1040 0%, transparent 50%),
+            linear-gradient(180deg, var(--bg-mid) 0%, var(--bg-deep) 100%);
+    background-attachment: fixed;
+
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* 让 hidden 属性始终生效（后面有 display:flex 的规则会覆盖它） */
+[hidden] {
+    display: none !important;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ---------------- 背景：星空 ---------------- */
+/* canvas 是替换元素，光靠 position:fixed + inset:0 撑不满，会退回 300x150 的固有尺寸，
+   所以必须显式给 width/height 100% */
+#starfield {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* ---------------- 背景：CRT 扫描线 + 暗角 ---------------- */
+.crt {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    background:
+            repeating-linear-gradient(
+                    to bottom,
+                    rgba(0, 0, 0, 0) 0px,
+                    rgba(0, 0, 0, 0) 2px,
+                    rgba(0, 0, 0, .22) 3px,
+                    rgba(0, 0, 0, .22) 4px
+            );
+    mix-blend-mode: multiply;
+}
+
+.crt::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, .75) 100%);
+}
+
+/* ---------------- 机柜容器 ---------------- */
+.cabinet {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: boot-in .7s cubic-bezier(.2, .9, .3, 1.2) both;
+}
+
+@keyframes boot-in {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(.97);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* ============================================================
+   标题
+   ============================================================ */
+.cabinet__head {
+    text-align: center;
+}
+
+.logo {
+    margin: 0 0 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo__main {
+    position: relative;
+    font-family: var(--font-pixel);
+    font-size: clamp(20px, 6.2vw, 30px);
+    letter-spacing: 2px;
+    line-height: 1.25;
+    color: #fff;
+    text-shadow:
+            0 0 6px var(--cyan),
+            0 0 18px rgba(77, 243, 255, .8),
+            0 0 42px rgba(77, 243, 255, .45);
+    animation: neon-flicker 4.5s infinite;
+}
+
+/* 霓虹闪烁 */
+@keyframes neon-flicker {
+    0%, 18%, 22%, 25%, 53%, 57%, 100% {
+        opacity: 1;
+    }
+    20%, 24%, 55% {
+        opacity: .68;
+    }
+}
+
+/* RGB 分离残影 */
+.logo__main::before,
+.logo__main::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.logo__main::before {
+    color: var(--pink);
+    transform: translate(-2px, 1px);
+    opacity: .55;
+    mix-blend-mode: screen;
+}
+
+.logo__main::after {
+    color: var(--cyan);
+    transform: translate(2px, -1px);
+    opacity: .55;
+    mix-blend-mode: screen;
+}
+
+.logo__sub {
+    font-size: 17px;
+    letter-spacing: 5px;
+    color: var(--yellow);
+    text-shadow: 0 0 10px rgba(255, 217, 61, .6);
+}
+
+.tagline {
+    margin: 0;
+    min-height: 24px;
+    font-size: 17px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+}
+
+.tagline__mark {
+    color: var(--green);
+    margin-right: 6px;
+}
+
+/* 打字机光标 */
+.caret {
+    display: inline-block;
+    width: 9px;
+    height: 17px;
+    margin-left: 3px;
+    vertical-align: -2px;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: caret-blink 1s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+    0%, 49% {
+        opacity: 1;
+    }
+    50%, 100% {
+        opacity: 0;
+    }
+}
+
+/* ============================================================
+   面板（游戏机屏幕）
+   ============================================================ */
+.panel {
+    position: relative;
+    padding: 30px 26px 22px;
+    background:
+            linear-gradient(180deg, rgba(77, 243, 255, .05), transparent 40%),
+            var(--panel);
+    border: 2px solid var(--edge);
+    border-radius: var(--radius);
+    /* 双层描边 = 街机机箱质感 */
+    box-shadow:
+            0 0 0 3px #05060f,
+            0 0 0 5px #1a2450,
+            0 0 34px rgba(77, 243, 255, .16),
+            inset 0 0 60px rgba(0, 0, 0, .6);
+}
+
+/* 抖动 / 成功 动画 */
+.panel.is-shake {
+    animation: shake .42s cubic-bezier(.36, .07, .19, .97);
+}
+
+@keyframes shake {
+    10%, 90% { transform: translateX(-3px); }
+    20%, 80% { transform: translateX(5px); }
+    30%, 50%, 70% { transform: translateX(-7px); }
+    40%, 60% { transform: translateX(7px); }
+}
+
+/* 四角装饰 */
+.corner {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--edge-hot);
+    opacity: .85;
+    pointer-events: none;
+}
+
+.corner--tl {
+    top: -2px;
+    left: -2px;
+    border-right: 0;
+    border-bottom: 0;
+}
+
+.corner--tr {
+    top: -2px;
+    right: -2px;
+    border-left: 0;
+    border-bottom: 0;
+}
+
+.corner--bl {
+    bottom: -2px;
+    left: -2px;
+    border-right: 0;
+    border-top: 0;
+}
+
+.corner--br {
+    bottom: -2px;
+    right: -2px;
+    border-left: 0;
+    border-top: 0;
+}
+
+/* ============================================================
+   Tabs
+   ============================================================ */
+.tabs {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 4px;
+    margin-bottom: 24px;
+    background: #070a19;
+    border: 1px solid var(--edge);
+}
+
+.tabs__slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    height: calc(100% - 8px);
+    background: linear-gradient(180deg, rgba(77, 243, 255, .28), rgba(77, 243, 255, .10));
+    border: 1px solid var(--edge-hot);
+    box-shadow: 0 0 14px rgba(77, 243, 255, .45) inset;
+    transition: transform .28s cubic-bezier(.3, 1.4, .5, 1);
+}
+
+.tabs.is-register .tabs__slider {
+    transform: translateX(100%);
+}
+
+.tab {
+    position: relative;
+    z-index: 1;
+    padding: 11px 8px;
+    font-family: var(--font-pixel);
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color .2s, text-shadow .2s;
+}
+
+.tab:hover {
+    color: var(--text);
+}
+
+.tab.is-active {
+    color: var(--cyan);
+    text-shadow: 0 0 10px rgba(77, 243, 255, .9);
+}
+
+/* ============================================================
+   表单
+   ============================================================ */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.field__label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 17px;
+    letter-spacing: 2px;
+    color: var(--text);
+}
+
+.field__en {
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+}
+
+.input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    background: #060917;
+    border: 2px solid var(--edge);
+    border-radius: var(--radius);
+    transition: border-color .2s, box-shadow .2s, background .2s;
+}
+
+.input-wrap:focus-within {
+    border-color: var(--edge-hot);
+    background: #081025;
+    box-shadow: 0 0 0 1px rgba(77, 243, 255, .3), 0 0 20px rgba(77, 243, 255, .28);
+}
+
+.prompt {
+    flex: none;
+    color: var(--green);
+    font-size: 19px;
+    text-shadow: 0 0 8px rgba(92, 240, 138, .8);
+    animation: caret-blink 1.1s steps(1) infinite;
+}
+
+.input-wrap input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    padding: 13px 0;
+    font-family: var(--font-body);
+    font-size: 19px;
+    letter-spacing: 1px;
+    color: var(--cyan);
+    background: none;
+    border: 0;
+    outline: none;
+    caret-color: var(--green);
+}
+
+.input-wrap input::placeholder {
+    color: #4a5580;
+    letter-spacing: 0;
+}
+
+/* 浏览器自动填充的黄色背景太出戏，覆盖掉 */
+.input-wrap input:-webkit-autofill,
+.input-wrap input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--cyan);
+    -webkit-box-shadow: 0 0 0 1000px #060917 inset;
+}
+
+/* 密钥显示切换 */
+.peek {
+    flex: none;
+    padding: 4px 6px;
+    font-size: 17px;
+    line-height: 1;
+    color: var(--text-dim);
+    background: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: color .2s, border-color .2s;
+}
+
+.peek:hover,
+.peek:focus-visible {
+    color: var(--yellow);
+    border-color: var(--edge);
+    outline: none;
+}
+
+.peek.is-on {
+    color: var(--yellow);
+    text-shadow: 0 0 10px rgba(255, 217, 61, .9);
+}
+
+/* 校验提示 */
+.hint {
+    margin: 0;
+    min-height: 18px;
+    font-size: 16px;
+    letter-spacing: .5px;
+    color: var(--text-dim);
+}
+
+.field.is-bad .input-wrap {
+    border-color: var(--red);
+    box-shadow: 0 0 18px rgba(255, 91, 91, .3);
+}
+
+.field.is-bad .hint {
+    color: var(--red);
+}
+
+.field.is-good .input-wrap {
+    border-color: rgba(92, 240, 138, .7);
+}
+
+.field.is-good .hint {
+    color: var(--green);
+}
+
+/* ============================================================
+   按钮
+   ============================================================ */
+.btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 15px 20px;
+    font-family: var(--font-pixel);
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: #04121a;
+    background: linear-gradient(180deg, var(--cyan), #17b6c9);
+    border: 0;
+    border-radius: var(--radius);
+    cursor: pointer;
+    box-shadow:
+            0 4px 0 #0d6472,
+            0 6px 0 #05060f,
+            0 10px 26px rgba(77, 243, 255, .35);
+    transition: transform .08s, box-shadow .08s, filter .2s;
+}
+
+.btn:hover:not(:disabled) {
+    filter: brightness(1.12);
+}
+
+/* 街机按键：按下去会真的陷进去 */
+.btn:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow:
+            0 0 0 #0d6472,
+            0 2px 0 #05060f,
+            0 4px 14px rgba(77, 243, 255, .3);
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--yellow);
+    outline-offset: 4px;
+}
+
+.btn:disabled {
+    cursor: progress;
+    filter: grayscale(.55) brightness(.75);
+}
+
+.btn--primary {
+    width: 100%;
+    margin-top: 4px;
+}
+
+.btn--ghost {
+    color: var(--text);
+    background: transparent;
+    border: 2px solid var(--edge);
+    box-shadow: none;
+    font-size: 11px;
+    padding: 13px 18px;
+}
+
+.btn--ghost:hover:not(:disabled) {
+    border-color: var(--edge-hot);
+    color: var(--cyan);
+}
+
+.btn--ghost:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+/* 加载中的省略号 */
+.btn__dots::after {
+    content: '';
+    animation: dots 1.2s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0% { content: ''; }
+    25% { content: '·'; }
+    50% { content: '··'; }
+    75%, 100% { content: '···'; }
+}
+
+/* 表单底部切换链接 */
+.form__swap {
+    margin: 2px 0 0;
+    text-align: center;
+    font-size: 16px;
+    color: var(--text-dim);
+}
+
+.linklike {
+    padding: 2px 4px;
+    font-family: inherit;
+    font-size: 16px;
+    color: var(--yellow);
+    background: none;
+    border: 0;
+    border-bottom: 1px dashed rgba(255, 217, 61, .5);
+    cursor: pointer;
+    transition: color .2s, border-color .2s, text-shadow .2s;
+}
+
+.linklike:hover,
+.linklike:focus-visible {
+    color: #fff;
+    border-color: #fff;
+    text-shadow: 0 0 10px var(--yellow);
+    outline: none;
+}
+
+/* ============================================================
+   游戏对话框
+   ============================================================ */
+.dialog {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin-top: 18px;
+    padding: 12px 14px;
+    font-size: 17px;
+    line-height: 1.5;
+    letter-spacing: .5px;
+    color: var(--red);
+    background: rgba(255, 91, 91, .07);
+    border: 1px solid rgba(255, 91, 91, .45);
+    border-left: 4px solid var(--red);
+    animation: dialog-in .22s ease-out both;
+}
+
+.dialog--ok,
+.dialog.is-ok {
+    color: var(--green);
+    background: rgba(92, 240, 138, .07);
+    border-color: rgba(92, 240, 138, .45);
+    border-left-color: var(--green);
+}
+
+.dialog.is-info {
+    color: var(--cyan);
+    background: rgba(77, 243, 255, .07);
+    border-color: rgba(77, 243, 255, .45);
+    border-left-color: var(--cyan);
+}
+
+.dialog__icon {
+    flex: none;
+    animation: caret-blink 1.4s steps(1) infinite;
+}
+
+@keyframes dialog-in {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* 闪烁的 INSERT COIN */
+.coin {
+    margin: 20px 0 0;
+    text-align: center;
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--yellow);
+    opacity: .75;
+    animation: caret-blink 1.6s steps(1) infinite;
+}
+
+/* ============================================================
+   冒险者档案
+   ============================================================ */
+.profile__ok {
+    margin: 0 0 22px;
+    text-align: center;
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--green);
+    text-shadow: 0 0 12px rgba(92, 240, 138, .8);
+}
+
+.blink {
+    animation: caret-blink 1s steps(1) infinite;
+}
+
+.profile__body {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.avatar {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 74px;
+    height: 74px;
+    font-size: 34px;
+    color: var(--cyan);
+    background:
+            linear-gradient(135deg, rgba(77, 243, 255, .18), rgba(255, 61, 129, .16)),
+            #070b1c;
+    border: 2px solid var(--edge-hot);
+    box-shadow: 0 0 22px rgba(77, 243, 255, .35), inset 0 0 22px rgba(0, 0, 0, .6);
+    animation: avatar-pulse 3s ease-in-out infinite;
+}
+
+@keyframes avatar-pulse {
+    0%, 100% { box-shadow: 0 0 18px rgba(77, 243, 255, .3), inset 0 0 22px rgba(0, 0, 0, .6); }
+    50% { box-shadow: 0 0 32px rgba(77, 243, 255, .6), inset 0 0 22px rgba(0, 0, 0, .6); }
+}
+
+.profile__meta {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.profile__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+    padding-bottom: 7px;
+    border-bottom: 1px dashed rgba(42, 58, 122, .8);
+}
+
+.profile__row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.profile__key {
+    flex: none;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+}
+
+.profile__val {
+    min-width: 0;
+    font-size: 19px;
+    letter-spacing: 1px;
+    color: var(--cyan);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.profile__val--stat {
+    font-family: var(--font-pixel);
+    font-size: 15px;
+    color: var(--yellow);
+    text-shadow: 0 0 12px rgba(255, 217, 61, .8);
+}
+
+.profile__val--lv {
+    font-size: 17px;
+    color: var(--pink);
+}
+
+.profile__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ============================================================
+   页脚 & 音效开关
+   ============================================================ */
+.credits {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: #4a5580;
+}
+
+.credits__sep {
+    opacity: .6;
+}
+
+.sfx-toggle {
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    z-index: 60;
+    padding: 8px 12px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    background: rgba(6, 9, 23, .85);
+    border: 1px solid var(--edge);
+    cursor: pointer;
+    transition: color .2s, border-color .2s;
+}
+
+.sfx-toggle:hover,
+.sfx-toggle:focus-visible {
+    color: var(--cyan);
+    border-color: var(--edge-hot);
+    outline: none;
+}
+
+.sfx-toggle[aria-pressed="false"] {
+    color: #4a5580;
+    text-decoration: line-through;
+}
+
+/* ============================================================
+   响应式
+   ============================================================ */
+@media (max-width: 420px) {
+    body {
+        padding: 18px 12px;
+        font-size: 18px;
+    }
+
+    .panel {
+        padding: 24px 16px 18px;
+    }
+
+    .tabs {
+        margin-bottom: 20px;
+    }
+
+    .profile__body {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .profile__meta {
+        width: 100%;
+    }
+
+    .corner {
+        width: 10px;
+        height: 10px;
+    }
+}
+
+/* ============================================================
+   无障碍：尊重「减少动效」
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+    }
+}

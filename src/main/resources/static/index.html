@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="TEXT QUEST 文字冒险 - 登录 / 注册">
+    <title>TEXT QUEST · 文字冒险</title>
+    <link rel="icon"
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>&#127918;</text></svg>">
+    <!-- 网络字体（可选增强，加载失败会自动回退到系统字体），想离线运行直接删掉这两行即可 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body>
+
+<!-- 星空背景 -->
+<canvas id="starfield" aria-hidden="true"></canvas>
+<!-- CRT 扫描线 / 暗角 -->
+<div class="crt" aria-hidden="true"></div>
+
+<main class="cabinet">
+
+    <!-- ==================== 标题区 ==================== -->
+    <header class="cabinet__head">
+        <h1 class="logo">
+            <span class="logo__main" data-text="TEXT QUEST">TEXT QUEST</span>
+            <span class="logo__sub">文 字 冒 险 · 序 章</span>
+        </h1>
+        <p class="tagline">
+            <span class="tagline__mark">&gt;</span>
+            <span id="tagline"></span><span class="caret" aria-hidden="true"></span>
+        </p>
+    </header>
+
+    <!-- ==================== 登录 / 注册面板 ==================== -->
+    <section class="panel" id="authPanel" aria-labelledby="authTitle">
+        <i class="corner corner--tl" aria-hidden="true"></i>
+        <i class="corner corner--tr" aria-hidden="true"></i>
+        <i class="corner corner--bl" aria-hidden="true"></i>
+        <i class="corner corner--br" aria-hidden="true"></i>
+
+        <h2 class="sr-only" id="authTitle">登录或注册</h2>
+
+        <!-- 存档选择（登录 / 注册） -->
+        <div class="tabs" role="tablist" aria-label="登录或注册">
+            <button type="button" class="tab is-active" id="tabLogin"
+                    role="tab" aria-selected="true" aria-controls="authForm" data-mode="login">
+                登 录
+            </button>
+            <button type="button" class="tab" id="tabRegister"
+                    role="tab" aria-selected="false" aria-controls="authForm" data-mode="register">
+                注 册
+            </button>
+            <span class="tabs__slider" aria-hidden="true"></span>
+        </div>
+
+        <form class="form" id="authForm" novalidate autocomplete="on">
+
+            <!-- 角色名 -->
+            <div class="field" id="fieldUsername">
+                <label class="field__label" for="username">
+                    <span class="field__cn">角色名</span>
+                    <span class="field__en">USERNAME</span>
+                </label>
+                <div class="input-wrap">
+                    <span class="prompt" aria-hidden="true">&gt;</span>
+                    <input type="text" id="username" name="username"
+                           placeholder="给勇者取个名字…"
+                           maxlength="16" autocomplete="username"
+                           spellcheck="false" autocapitalize="off" required>
+                </div>
+                <p class="hint" id="usernameHint" aria-live="polite"></p>
+            </div>
+
+            <!-- 通行密钥 -->
+            <div class="field" id="fieldPassword">
+                <label class="field__label" for="password">
+                    <span class="field__cn">通行密钥</span>
+                    <span class="field__en">PASSWORD</span>
+                </label>
+                <div class="input-wrap">
+                    <span class="prompt" aria-hidden="true">&gt;</span>
+                    <input type="password" id="password" name="password"
+                           placeholder="输入通行密钥…"
+                           maxlength="16" autocomplete="current-password"
+                           spellcheck="false" required>
+                    <button type="button" class="peek" id="peekBtn"
+                            aria-label="显示密钥" aria-pressed="false" tabindex="0">◎</button>
+                </div>
+                <p class="hint" id="passwordHint" aria-live="polite"></p>
+            </div>
+
+            <!-- 提交 -->
+            <button type="submit" class="btn btn--primary" id="submitBtn">
+                <span class="btn__label" id="submitLabel">开 始 冒 险</span>
+                <span class="btn__dots" id="submitDots" hidden></span>
+            </button>
+
+            <p class="form__swap">
+                <span id="swapText">还没有存档？</span>
+                <button type="button" class="linklike" id="swapBtn">立即注册 →</button>
+            </p>
+        </form>
+
+        <!-- 游戏对话框（提示信息） -->
+        <div class="dialog" id="dialog" role="status" aria-live="polite" hidden>
+            <span class="dialog__icon" id="dialogIcon" aria-hidden="true">◈</span>
+            <span class="dialog__text" id="dialogText"></span>
+        </div>
+
+        <p class="coin" aria-hidden="true">INSERT COIN · 免费试玩</p>
+    </section>
+
+    <!-- ==================== 登录成功：冒险者档案 ==================== -->
+    <section class="panel panel--profile" id="profilePanel" hidden aria-labelledby="profileTitle">
+        <i class="corner corner--tl" aria-hidden="true"></i>
+        <i class="corner corner--tr" aria-hidden="true"></i>
+        <i class="corner corner--bl" aria-hidden="true"></i>
+        <i class="corner corner--br" aria-hidden="true"></i>
+
+        <p class="profile__ok" id="profileTitle">
+            <span class="blink" aria-hidden="true">●</span> 存 档 读 取 成 功
+        </p>
+
+        <div class="profile__body">
+            <div class="avatar" id="avatar" aria-hidden="true">勇</div>
+            <div class="profile__meta">
+                <p class="profile__row">
+                    <span class="profile__key">角色名</span>
+                    <span class="profile__val" id="profileName">—</span>
+                </p>
+                <p class="profile__row">
+                    <span class="profile__key">最高连胜</span>
+                    <span class="profile__val profile__val--stat" id="profileWins">…</span>
+                </p>
+                <p class="profile__row">
+                    <span class="profile__key">身份</span>
+                    <span class="profile__val profile__val--lv" id="profileLevel">LV.1 见习冒险者</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="profile__actions">
+            <button type="button" class="btn btn--primary" id="startGameBtn">
+                <span class="btn__label">进 入 游 戏</span>
+            </button>
+            <button type="button" class="btn btn--ghost" id="logoutBtn">切换存档</button>
+        </div>
+
+        <div class="dialog dialog--ok" id="profileDialog" role="status" aria-live="polite" hidden>
+            <span class="dialog__icon" aria-hidden="true">◈</span>
+            <span class="dialog__text" id="profileDialogText"></span>
+        </div>
+
+        <p class="coin" aria-hidden="true">PRESS START</p>
+    </section>
+
+</main>
+
+<footer class="credits">
+    <span>© TEXT QUEST</span>
+    <span class="credits__sep">·</span>
+    <span>SpringBoot + MyBatis</span>
+</footer>
+
+<!-- 音效提示（首次点击后才会初始化 AudioContext） -->
+<button type="button" class="sfx-toggle" id="sfxToggle" aria-pressed="true" title="音效开关">♪ 音效：开</button>
+
+<script src="js/login.js"></script>
+</body>
+</html>

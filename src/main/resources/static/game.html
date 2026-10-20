@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>战斗 · TEXT QUEST</title>
+    <link rel="icon"
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>&#9876;</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <!-- 改完 game.css / game.js 之后，把下面 v= 的数字加一，
+         强制浏览器丢掉旧缓存（不然很容易遇到「改了没生效」） -->
+    <link rel="stylesheet" href="css/game.css?v=6">
+</head>
+<body>
+
+<canvas id="starfield" aria-hidden="true"></canvas>
+<!-- 特效层：粒子 / 冲击波 / 斩击线 / 全屏闪光都画在这上面 -->
+<canvas id="fxCanvas" aria-hidden="true"></canvas>
+<!-- 受伤红晕、低血量脉冲 -->
+<div class="vignette" id="vignette" aria-hidden="true"></div>
+<div class="crt" aria-hidden="true"></div>
+<!-- 连胜里程碑横幅 -->
+<div class="banner" id="banner" hidden><span class="banner__inner" id="bannerText"></span></div>
+
+<div class="battle">
+
+    <!-- ==================== 顶栏 ==================== -->
+    <header class="hud">
+        <div class="hud__brand">
+            <span class="hud__logo">TEXT QUEST</span>
+            <span class="hud__chapter">无尽回廊 · 战斗</span>
+        </div>
+
+        <div class="hud__stats">
+            <div class="stat">
+                <span class="stat__label">连胜</span>
+                <span class="stat__value" id="hudStreak">0</span>
+            </div>
+            <div class="stat stat--max">
+                <span class="stat__label">最高</span>
+                <span class="stat__value" id="hudMaxWins">—</span>
+            </div>
+        </div>
+
+        <div class="hud__actions">
+            <button type="button" class="btn btn--tiny btn--ghost" id="codexBtn"
+                    title="查看主角技能与敌人图鉴（快捷键 C）">☰ 图鉴</button>
+            <button type="button" class="btn btn--tiny btn--ghost" id="fxToggle"
+                    aria-pressed="true" title="开关战斗特效">✦ 特效</button>
+            <button type="button" class="btn btn--tiny btn--ghost" id="sfxToggle"
+                    aria-pressed="true" title="开关战斗音效（M）">♪ 音效</button>
+            <button type="button" class="btn btn--tiny" id="restartBtn" title="重新开始一局">重开</button>
+            <button type="button" class="btn btn--tiny btn--ghost" id="logoutBtn" title="回到登录页">退出</button>
+        </div>
+    </header>
+
+    <!-- ==================== 战场 ==================== -->
+    <section class="arena">
+
+        <!-- 玩家 -->
+        <article class="fighter fighter--player" id="playerCard">
+            <div class="portrait">
+                <img id="playerImg" src="img/player/player.jpg" alt="玩家角色">
+                <span class="portrait__tag">你</span>
+                <div class="fx" id="playerFx"></div>
+            </div>
+            <div class="fighter__info">
+                <div class="fighter__top">
+                    <span class="fighter__name" id="playerName">勇者</span>
+                    <span class="fighter__hpnum" id="playerHpNum">200 / 200</span>
+                </div>
+                <div class="bar bar--hp">
+                    <div class="bar__ghost" id="playerHpGhost"></div>
+                    <div class="bar__fill" id="playerHpBar"></div>
+                </div>
+                <div class="fighter__meta">
+                    <span>攻 <b id="playerAtk">20</b></span>
+                    <span>防 <b id="playerDef">5</b></span>
+                </div>
+            </div>
+        </article>
+
+        <div class="arena__vs" id="arenaVs">VS</div>
+
+        <!-- 敌人 -->
+        <article class="fighter fighter--enemy" id="enemyCard">
+            <div class="portrait">
+                <img id="enemyImg" alt="敌人">
+                <span class="portrait__tag portrait__tag--enemy" id="enemyTag">敌人</span>
+                <div class="fx" id="enemyFx"></div>
+            </div>
+            <div class="fighter__info">
+                <div class="fighter__top">
+                    <span class="fighter__name" id="enemyName">—</span>
+                    <span class="fighter__hpnum" id="enemyHpNum">— / —</span>
+                </div>
+                <div class="bar bar--hp bar--enemy">
+                    <div class="bar__ghost" id="enemyHpGhost"></div>
+                    <div class="bar__fill" id="enemyHpBar"></div>
+                </div>
+                <div class="fighter__meta">
+                    <span>攻 <b id="enemyAtk">—</b></span>
+                    <span>防 <b id="enemyDef">—</b></span>
+                    <span class="skill-chip" id="enemySkillChip">—</span>
+                    <span class="defend-chip" id="enemyDefendChip" hidden>防御姿态</span>
+                </div>
+            </div>
+        </article>
+
+    </section>
+
+    <!-- ==================== 战斗记录 ==================== -->
+    <section class="logbox">
+        <div class="logbox__head">
+            <span>▸ 战斗记录</span>
+            <button type="button" class="logbox__clear" id="clearLogBtn">清空</button>
+        </div>
+        <ul class="log" id="log" aria-live="polite"></ul>
+    </section>
+
+    <!-- ==================== 技能栏 ==================== -->
+    <section class="skills" id="skills">
+        <button type="button" class="skill" data-attack="1">
+            <span class="skill__key">1</span>
+            <span class="skill__name" id="skillName1">普通攻击</span>
+            <span class="skill__desc" id="skillDesc1">攻击 − 防御，无消耗</span>
+        </button>
+        <button type="button" class="skill" data-attack="2">
+            <span class="skill__key">2</span>
+            <span class="skill__name" id="skillName2">蓄力重击</span>
+            <span class="skill__desc" id="skillDesc2">自损 10 血，伤害翻倍</span>
+        </button>
+        <button type="button" class="skill" data-attack="3">
+            <span class="skill__key">3</span>
+            <span class="skill__name" id="skillName3">生命汲取</span>
+            <span class="skill__desc" id="skillDesc3">自损 10 血，吸血回血</span>
+        </button>
+    </section>
+
+    <p class="hintbar">
+        按 <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> 出招 · <kbd>C</kbd> 图鉴 · <kbd>M</kbd> 静音 · <kbd>R</kbd> 重开
+        <!-- 这个 BUILD 号是为了方便确认「浏览器到底加载的是不是最新版」，
+             每次改完前端把它和上面的 v= 一起加一 -->
+        <span class="build">BUILD 6</span>
+    </p>
+
+</div>
+
+<!-- ==================== 结算遮罩 ==================== -->
+<div class="overlay" id="overlay" hidden>
+    <div class="overlay__panel">
+        <h2 class="overlay__title" id="overlayTitle">—</h2>
+        <p class="overlay__sub" id="overlaySub">—</p>
+        <div class="overlay__stats">
+            <div class="ovstat">
+                <span class="ovstat__label">本局连胜</span>
+                <span class="ovstat__value" id="overStreak">0</span>
+            </div>
+            <div class="ovstat">
+                <span class="ovstat__label">历史最高</span>
+                <span class="ovstat__value ovstat__value--gold" id="overMax">—</span>
+            </div>
+        </div>
+        <div class="overlay__actions">
+            <button type="button" class="btn" id="retryBtn">再 来 一 局</button>
+            <button type="button" class="btn btn--ghost" id="backBtn">回 到 登 录</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 图鉴（主角技能 / 敌人） ==================== -->
+<div class="codex" id="codex" hidden>
+    <div class="codex__panel" role="dialog" aria-modal="true" aria-labelledby="codexTitle">
+        <header class="codex__head">
+            <h2 class="codex__title" id="codexTitle">图 鉴</h2>
+            <button type="button" class="codex__close" id="codexClose" aria-label="关闭图鉴">✕</button>
+        </header>
+
+        <div class="codex__tabs" role="tablist">
+            <button type="button" class="codex__tab is-active" data-tab="skills"
+                    role="tab" aria-selected="true">主角技能</button>
+            <button type="button" class="codex__tab" data-tab="bestiary"
+                    role="tab" aria-selected="false">敌人图鉴</button>
+        </div>
+
+        <div class="codex__body">
+            <div class="codex__section" id="codexSkills"></div>
+            <div class="codex__section" id="codexBestiary" hidden></div>
+        </div>
+
+        <p class="codex__foot">
+            按 <kbd>Esc</kbd> 或 <kbd>C</kbd> 关闭 · 敌人数据来自后端 <code>/game/initEnemyList</code>
+        </p>
+    </div>
+</div>
+
+<!-- 全局提示条（接口出错时用） -->
+<div class="toast" id="toast" hidden></div>
+
+<script src="js/fx.js?v=6"></script>
+<script src="js/sfx.js?v=6"></script>
+<script src="js/game.js?v=6"></script>
+</body>
+</html>
